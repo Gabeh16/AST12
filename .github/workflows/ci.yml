@@ -7,6 +7,10 @@ jobs:
   verificar-api:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        python-version: [ '3.10', '3.11', '3.12' ]
+
     steps:
       - name: Baixar código
         uses: actions/checkout@v4
@@ -24,3 +28,15 @@ jobs:
 
       - name: Rodar Testes
         run: python -m pytest test_main.py -v
+
+      - name: Subir a API e testar requisição (Integração)
+        run: |
+          uvicorn main:app --host 127.0.0.1 --port 8000 &
+          for i in {1..10}; do
+            if curl -fsS http://127.0.0.1:8000/; then
+              break
+            fi
+            sleep 1
+          done
+          curl -f http://127.0.0.1:8000/
+          curl -f http://127.0.0.1:8000/somar/10/20
